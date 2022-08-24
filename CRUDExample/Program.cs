@@ -1,15 +1,13 @@
-
-
-using CRUDExample.Model;
-
 var configuration = GetConfiguration();
 Log.Logger = CreateSeriLogger(configuration);
 
 Log.Information($"information {Program.AppName}");
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Logging.AddSerilog(CreateSeriLogger(configuration));
 
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ItemCatalogContext>(opt => opt.UseInMemoryDatabase("items"));
 
@@ -33,7 +31,21 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    Log.Information("Starting web host ({ApplicationContext})...", Program.AppName);
+    app.Run();
+    return 0;
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Program terminated unexpectedly ({ApplicationContext})!", Program.AppName);
+    return 1;
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 IConfiguration GetConfiguration()
 {
